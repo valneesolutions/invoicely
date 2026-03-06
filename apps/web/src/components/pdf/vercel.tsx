@@ -152,12 +152,17 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                 style={tw(
                   cn(
                     "flex-row px-4 py-3 text-2xs border-b border-borderColor",
-                    index % 2 === 0 ? "bg-[#111111]" : "bg-background",
+                    item.type === "credit" ? "bg-[#1a0a0a]" : index % 2 === 0 ? "bg-[#111111]" : "bg-background",
                   ),
                 )}
               >
                 <View style={tw("flex flex-col w-[60%]")}>
-                  <Text style={tw("w-full text-xs leading-[12px] text-neutral-100")}>{item.name}</Text>
+                  <View style={tw("flex flex-row items-center gap-1.5")}>
+                    <Text style={tw("text-xs leading-[12px] text-neutral-100")}>{item.name}</Text>
+                    {item.type === "credit" && (
+                      <Text style={tw("text-3xs font-semibold text-red-400 bg-red-900 px-1 rounded")}>CREDIT</Text>
+                    )}
+                  </View>
                   <Text style={tw("text-2xs leading-[10px] mt-1 font-normal text-neutral-700")}>
                     {item.description}
                   </Text>
@@ -168,8 +173,17 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                 <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
                   {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
                 </Text>
-                <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}
+                <Text
+                  style={tw(
+                    cn(
+                      "w-[15%] text-right font-geistmono tracking-tighter",
+                      item.type === "credit" ? "text-red-400" : "text-neutral-100",
+                    ),
+                  )}
+                >
+                  {item.type === "credit"
+                    ? `\u2212 ${formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}`
+                    : formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}
                 </Text>
               </View>
             ))}

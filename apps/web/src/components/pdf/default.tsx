@@ -186,26 +186,39 @@ const DefaultPDF: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                 style={tw(
                   cn(
                     "flex-row p-2 text-2xs rounded",
-                    index % 2 === 0
-                      ? darkMode
-                        ? "bg-darkmode"
-                        : "bg-white"
-                      : darkMode
-                        ? "bg-neutral-800"
-                        : "bg-neutral-100",
+                    item.type === "credit"
+                      ? "bg-red-50"
+                      : index % 2 === 0
+                        ? darkMode
+                          ? "bg-darkmode"
+                          : "bg-white"
+                        : darkMode
+                          ? "bg-neutral-800"
+                          : "bg-neutral-100",
                   ),
                 )}
               >
                 <View style={tw("flex flex-col w-[60%]")}>
-                  <Text style={tw("w-full text-sm font-semibold")}>{item.name}</Text>
+                  <View style={tw("flex flex-row items-center gap-1.5")}>
+                    <Text style={tw("text-sm font-semibold")}>{item.name}</Text>
+                    {item.type === "credit" && (
+                      <Text style={tw("text-3xs font-semibold text-red-500 bg-red-100 px-1 rounded")}>CREDIT</Text>
+                    )}
+                  </View>
                   <Text style={tw("text-xs font-normal text-neutral-600")}>{item.description}</Text>
                 </View>
                 <Text style={tw("w-[10%] text-sm text-center font-geistmono tracking-tighter")}>{item.quantity}</Text>
                 <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
                   {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
                 </Text>
-                <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}
+                <Text
+                  style={tw(
+                    cn("w-[15%] text-sm text-right font-geistmono tracking-tighter", item.type === "credit" ? "text-red-500" : ""),
+                  )}
+                >
+                  {item.type === "credit"
+                    ? `\u2212 ${formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}`
+                    : formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}
                 </Text>
               </View>
             ))}

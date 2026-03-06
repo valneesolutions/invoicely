@@ -22,4 +22,6 @@ export const enum ERROR_MESSAGES {
   INDEXDB_ERROR = "IndexDB Error",
   NOT_ALLOWED_TO_DELETE_IMAGE = "You are not allowed to delete this image",
   MAX_IMAGES_REACHED = "You have reached the maximum number of images in your account! Try deleting some images.",
+  TEMPLATE_NOT_FOUND = "Template not found! Please try again later.",
+  FAILED_TO_DELETE_TEMPLATE = "Failed to delete template from database.",
 }

@@ -143,6 +143,7 @@ export const insertInvoiceQuery = async (invoice: ZodCreateInvoiceSchema, userId
         name: item.name,
         quantity: item.quantity,
         unitPrice: new Decimal(item.unitPrice),
+        type: item.type ?? "item",
         invoiceFieldId: insertedInvoiceField.id,
       })),
     );

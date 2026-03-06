@@ -6,6 +6,7 @@ import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/
 import SheetImageSelectorTrigger from "@/components/ui/image/sheet-image-selector-trigger";
 import { InvoiceImageSelectorSheet } from "./invoiceHelpers/invoice-image-selector-sheet";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import InvoiceContentTemplates from "./invoiceHelpers/invoice-content-templates";
 import { InvoiceTemplateSelector } from "./invoiceHelpers/invoice-templates";
 import { FormColorPicker } from "@/components/ui/form/form-color-picker";
 import InvoiceItemsSection from "./invoiceHelpers/invoice-items-section";
@@ -57,6 +58,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
             <div className="">
               <InvoiceTemplateSelector form={form} />
             </div>
+          </div>
+          <div className="flex h-14 flex-row items-center justify-between border-b px-4">
+            <span className="text-sm font-medium">Saved Templates</span>
+            <InvoiceContentTemplates form={form} />
           </div>
           <Accordion type="single" collapsible defaultValue="company-details" className="w-full divide-y border-b">
             {/* Company Details */}

@@ -6,6 +6,10 @@ export const valueType = z.enum(["percentage", "fixed"], {
   }),
 });
 
+export const invoiceItemType = z.enum(["item", "credit"], {
+  errorMap: () => ({ message: "Item type must be either 'item' or 'credit'" }),
+});
+
 export const createInvoiceItemSchema = z.object(
   {
     name: z
@@ -19,7 +23,8 @@ export const createInvoiceItemSchema = z.object(
       .positive({ message: "Quantity must be positive" }),
     unitPrice: z.coerce
       .number({ invalid_type_error: "Unit price must be a number" })
-      .positive({ message: "Unit price must be positive" }),
+      .nonnegative({ message: "Unit price must be non-negative" }),
+    type: invoiceItemType.default("item"),
   },
   { invalid_type_error: "Item must be an object" },
 );

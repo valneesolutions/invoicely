@@ -107,6 +107,7 @@ export const invoiceItems = pgTable("invoice_items", {
   description: text("description").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: Numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+  type: text("type").notNull().default("item"),
   invoiceFieldId: uuid("invoice_field_id")
     .references(() => invoiceFields.id, { onDelete: "cascade" })
     .notNull(),
@@ -128,6 +129,17 @@ export const invoiceMetadataPaymentInformation = pgTable("invoice_metadata_payme
   invoiceMetadataId: uuid("invoice_metadata_id")
     .references(() => invoiceMetadata.id, { onDelete: "cascade" })
     .notNull(),
+});
+
+export const invoiceTemplates = pgTable("invoice_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(),
+  data: jsonb("data").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Relations

@@ -14,4 +14,6 @@ export const enum SUCCESS_MESSAGES {
   IMAGES_FETCHED = "Images fetched successfully",
   INVOICE_DELETED = "Invoice deleted successfully",
   INVOICE_STATUS_UPDATED = "Invoice status updated successfully",
+  TEMPLATE_SAVED = "Template saved successfully",
+  TEMPLATE_DELETED = "Template deleted successfully",
 }
