@@ -3,8 +3,12 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import { resolve } from "node:path";
 
+const configuredAssetBaseUrl = process.env.NEXT_PUBLIC_ASSET_BASE_URL ?? process.env.CF_R2_PUBLIC_DOMAIN;
+const assetBaseUrl = configuredAssetBaseUrl ? new URL(configuredAssetBaseUrl) : undefined;
+
 const nextConfig: NextConfig = {
   /* config options here */
+  ...(configuredAssetBaseUrl && { env: { NEXT_PUBLIC_ASSET_BASE_URL: configuredAssetBaseUrl } }),
   webpack(config) {
     if (config.cache && typeof config.cache === "object") {
       // Webpack treats node_modules as immutable by package version. Track the
@@ -51,6 +55,15 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "assets.invoicely.gg", // Cloudflare R2 Storage
       },
+      ...(assetBaseUrl
+        ? [
+            {
+              protocol: assetBaseUrl.protocol.replace(":", "") as "https" | "http",
+              hostname: assetBaseUrl.hostname,
+              pathname: `${assetBaseUrl.pathname.replace(/\/$/, "")}/**`,
+            },
+          ]
+        : []),
     ],
   },
   // This is required to support PostHog trailing slash API requests

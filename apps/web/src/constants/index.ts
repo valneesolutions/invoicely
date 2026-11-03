@@ -1,1 +1,3 @@
-export const R2_PUBLIC_URL = "https://storage.invoicely.gg";
+import { env } from "@invoicely/utilities";
+
+export const ASSET_PUBLIC_URL = env.NEXT_PUBLIC_ASSET_BASE_URL;

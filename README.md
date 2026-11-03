@@ -189,12 +189,13 @@ BETTER_AUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-# Cloudflare R2 Storage
-CF_R2_ENDPOINT="your-r2-endpoint"
-CF_R2_ACCESS_KEY_ID="your-access-key"
-CF_R2_SECRET_ACCESS_KEY="your-secret-key"
-CF_R2_BUCKET_NAME="your-bucket-name"
-CF_R2_PUBLIC_DOMAIN="your-public-domain"
+# S3-compatible Object Storage (Neon Object Storage or Cloudflare R2)
+AWS_ENDPOINT_URL_S3="your-s3-endpoint"
+AWS_ACCESS_KEY_ID="your-access-key"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
+AWS_REGION="your-region"
+AWS_BUCKET_NAME="your-bucket-name"
+NEXT_PUBLIC_ASSET_BASE_URL="your-public-bucket-url"
 
 # Analytics
 NEXT_PUBLIC_POSTHOG_HOST="your-posthog-host"

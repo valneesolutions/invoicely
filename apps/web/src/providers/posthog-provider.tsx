@@ -7,7 +7,11 @@ import { env } from "@invoicely/utilities";
 import posthog from "posthog-js";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  const isConfigured = Boolean(env.NEXT_PUBLIC_POSTHOG_KEY && env.NEXT_PUBLIC_POSTHOG_HOST);
+
   useEffect(() => {
+    if (!isConfigured) return;
+
     posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
       ui_host: "https://us.posthog.com",
@@ -16,11 +20,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // debug: process.env.NODE_ENV === "development",
       debug: false,
     });
-  }, []);
+  }, [isConfigured]);
 
   return (
     <PHProvider client={posthog}>
-      <SuspendedPostHogPageView />
+      {isConfigured && <SuspendedPostHogPageView />}
       {children}
     </PHProvider>
   );
