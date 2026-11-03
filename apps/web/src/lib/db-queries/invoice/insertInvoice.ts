@@ -155,6 +155,7 @@ export const insertInvoiceQuery = async (
         name: item.name,
         quantity: item.quantity,
         unitPrice: new Decimal(item.unitPrice),
+        subItems: item.subItems ?? [],
         invoiceFieldId: insertedInvoiceField.id,
       })),
     );

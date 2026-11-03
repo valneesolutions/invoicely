@@ -1,8 +1,17 @@
-import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import type { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import Decimal from "decimal.js";
 
 export const getSubTotalValue = (data: ZodCreateInvoiceSchema) => {
-  return data.items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+  return data.items.reduce((acc, item) => acc + getInvoiceItemTotal(item), 0);
 };
+
+export const getInvoiceItemTotal = (item: ZodCreateInvoiceSchema["items"][number]) =>
+  (item.subItems ?? [])
+    .reduce(
+      (sum, sub) => (sub.type === "priced" ? sum.plus(sub.amount) : sum),
+      new Decimal(item.quantity).times(item.unitPrice),
+    )
+    .toNumber();
 
 export const getTotalValue = (data: ZodCreateInvoiceSchema) => {
   const subtotal = getSubTotalValue(data);

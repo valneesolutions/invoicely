@@ -21,7 +21,11 @@ function collectInvoiceText(data: ZodCreateInvoiceSchema): string {
     ...clientDetails.metadata.flatMap((field) => [field.label, field.value]),
     ...metadata.paymentInformation.flatMap((field) => [field.label, field.value]),
     ...invoiceDetails.billingDetails.map((billing) => billing.label),
-    ...items.flatMap((item) => [item.name, item.description]),
+    ...items.flatMap((item) => [
+      item.name,
+      item.description,
+      ...(item.subItems ?? []).map((sub) => (sub.type === "text" ? sub.text : sub.name)),
+    ]),
   ];
 
   return parts.filter(Boolean).join("");

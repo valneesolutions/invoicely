@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/dialog";
 import { createInvoiceItemSchema, ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { FormTextarea } from "@/components/ui/form/form-textarea";
 import { BoxIcon, BoxPlusIcon, TrashIcon } from "@/assets/icons";
+import { getInvoiceItemTotal } from "@/constants/pdf-helpers";
 import { FormInput } from "@/components/ui/form/form-input";
 import { GripVerticalIcon, PencilIcon } from "lucide-react";
 import { formatCurrencyText } from "@/constants/currency";
@@ -69,6 +71,15 @@ const InvoiceItemsSection: React.FC<InvoiceItemsSectionProps> = ({ form }) => {
                 <div className="w-full">
                   <div className="line-clamp-1 text-sm font-medium">{field.name}</div>
                   <div className="text-muted-foreground line-clamp-1 text-xs">{field.description}</div>
+                  {(field.subItems ?? []).map((sub, i) => (
+                    <div key={i} className="text-muted-foreground pl-2 text-xs whitespace-pre-wrap">
+                      {sub.type === "text"
+                        ? sub.text
+                        : sub.type === "priced"
+                          ? `${sub.name} — ${formatCurrencyText(form.watch("invoiceDetails.currency"), sub.amount)}`
+                          : sub.name}
+                    </div>
+                  ))}
                   <div className="text-primary text-[10px] font-medium">
                     {formatCurrencyText(form.watch("invoiceDetails.currency"), field.unitPrice)}{" "}
                     <span className="text-muted-foreground">x {field.quantity} Qty</span>
@@ -101,7 +112,7 @@ const InvoiceItemsSection: React.FC<InvoiceItemsSectionProps> = ({ form }) => {
                     <p className="space-x-1 text-[10px] whitespace-nowrap">
                       <span>Total:</span>
                       <span>
-                        {formatCurrencyText(form.watch("invoiceDetails.currency"), field.unitPrice * field.quantity)}
+                        {formatCurrencyText(form.watch("invoiceDetails.currency"), getInvoiceItemTotal(field))}
                       </span>
                     </p>
                   </div>
@@ -157,6 +168,7 @@ const HandleItemModal = ({ type, append, update, editingIndex, data, children }:
       description: data?.description || "",
       quantity: data?.quantity || 1,
       unitPrice: data?.unitPrice || 1,
+      subItems: data?.subItems || [],
     },
   });
 
@@ -173,9 +185,22 @@ const HandleItemModal = ({ type, append, update, editingIndex, data, children }:
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen)
+          invoiceItemForm.reset({
+            name: data?.name ?? "",
+            description: data?.description ?? "",
+            quantity: data?.quantity ?? 1,
+            unitPrice: data?.unitPrice ?? 1,
+            subItems: data?.subItems ?? [],
+          });
+        setOpen(nextOpen);
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <Form {...invoiceItemForm}>
           <form onSubmit={invoiceItemForm.handleSubmit(onHandleSubmit)}>
             <DialogHeaderContainer>
@@ -183,7 +208,7 @@ const HandleItemModal = ({ type, append, update, editingIndex, data, children }:
                 <BoxPlusIcon />
               </DialogIcon>
               <DialogHeader>
-                <DialogTitle>Add Item</DialogTitle>
+                <DialogTitle>{type === "edit" ? "Edit Item" : "Add Item"}</DialogTitle>
                 <DialogDescription>Add an item to the invoice</DialogDescription>
               </DialogHeader>
             </DialogHeaderContainer>
@@ -211,16 +236,116 @@ const HandleItemModal = ({ type, append, update, editingIndex, data, children }:
                   reactform={invoiceItemForm}
                 />
               </FormRow>
+              <SubItemsEditor form={invoiceItemForm} />
             </DialogContentContainer>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Add Item</Button>
+              <Button type="submit">{type === "edit" ? "Save Item" : "Add Item"}</Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const SubItemsEditor = ({ form }: { form: UseFormReturn<InvoiceItem> }) => {
+  const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "subItems" });
+  const subItems = form.watch("subItems") ?? [];
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">Sub-items</span>
+        <Button type="button" variant="outline" size="sm" onClick={() => append({ type: "text", text: "" })}>
+          Add sub-item
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-xs">Prices are added once to this item, regardless of its quantity.</p>
+      {fields.map((field, index) => {
+        const sub = subItems[index];
+        return (
+          <div key={field.id} className="space-y-3 rounded-md border p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-xs" htmlFor={`sub-item-type-${index}`}>
+                Content
+              </label>
+              <select
+                id={`sub-item-type-${index}`}
+                className="bg-background h-9 rounded border px-2 text-sm"
+                value={sub?.type ?? "text"}
+                onChange={(e) => {
+                  const value = sub?.type === "text" ? sub.text : (sub?.name ?? "");
+                  form.setValue(
+                    `subItems.${index}`,
+                    e.target.value === "text"
+                      ? { type: "text", text: value }
+                      : e.target.value === "name"
+                        ? { type: "name", name: value }
+                        : { type: "priced", name: value, amount: sub?.type === "priced" ? sub.amount : 0 },
+                    { shouldDirty: true, shouldValidate: true },
+                  );
+                }}
+              >
+                <option value="text">Text / description</option>
+                <option value="name">Name</option>
+                <option value="priced">Name + price</option>
+              </select>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Move sub-item ${index + 1} up`}
+                disabled={index === 0}
+                onClick={() => move(index, index - 1)}
+              >
+                ↑
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Move sub-item ${index + 1} down`}
+                disabled={index === fields.length - 1}
+                onClick={() => move(index, index + 1)}
+              >
+                ↓
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Remove sub-item ${index + 1}`}
+                onClick={() => remove(index)}
+              >
+                ×
+              </Button>
+            </div>
+            {sub?.type === "text" ? (
+              <FormTextarea
+                label="Text"
+                name={`subItems.${index}.text`}
+                placeholder="Description or list"
+                reactform={form}
+              />
+            ) : (
+              <FormInput label="Name" name={`subItems.${index}.name`} placeholder="Name" reactform={form} />
+            )}
+            {sub?.type === "priced" && (
+              <FormInput
+                type="number"
+                min="0"
+                step="0.01"
+                label="Amount"
+                name={`subItems.${index}.amount`}
+                placeholder="0"
+                reactform={form}
+              />
+            )}
+          </div>
+        );
+      })}
+    </section>
   );
 };
