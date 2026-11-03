@@ -1,9 +1,9 @@
 /* eslint-disable jsx-a11y/alt-text */
 "use client";
 
+import { getInvoiceItemTotal, getSubTotalValue, getTotalValue } from "@/constants/pdf-helpers";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { Document, Page, Text, View, Image, Font } from "@react-pdf/renderer";
-import { getSubTotalValue, getTotalValue } from "@/constants/pdf-helpers";
 import { resolveBodyFontFamily } from "@/lib/invoice/resolve-pdf-font";
 import { formatAmountInWords } from "@/lib/invoice/amount-in-words";
 import { GEIST_FONT, GEIST_MONO_FONT } from "@/constants/pdf-fonts";
@@ -179,6 +179,15 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                   <Text style={tw("text-2xs leading-[10px] mt-1 font-normal text-neutral-700")}>
                     {item.description}
                   </Text>
+                  {(item.subItems ?? []).map((sub, i) => (
+                    <Text key={i} style={tw("text-[8px] text-neutral-500 pl-2")}>
+                      {sub.type === "text"
+                        ? sub.text
+                        : sub.type === "priced"
+                          ? `${sub.name} — ${formatCurrencyText(data.invoiceDetails.currency, sub.amount)}`
+                          : sub.name}
+                    </Text>
+                  ))}
                 </View>
                 <Text style={tw("w-[10%] text-center font-geistmono tracking-tighter text-neutral-100")}>
                   {item.quantity}
@@ -187,7 +196,7 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                   {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
                 </Text>
                 <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, item.quantity * item.unitPrice)}
+                  {formatCurrencyText(data.invoiceDetails.currency, getInvoiceItemTotal(item))}
                 </Text>
               </View>
             ))}

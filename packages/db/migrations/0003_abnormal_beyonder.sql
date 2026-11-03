@@ -1,0 +1,1 @@
+ALTER TABLE "invoice_items" ADD COLUMN "sub_items" jsonb DEFAULT '[]'::jsonb NOT NULL;

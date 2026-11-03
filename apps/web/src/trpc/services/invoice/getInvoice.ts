@@ -33,6 +33,7 @@ export const getInvoice = authorizedProcedure.input(getInvoiceSchema).query(asyn
         items: invoice.invoiceFields.items.map((item) => ({
           ...item,
           unitPrice: item.unitPrice.toNumber(),
+          subItems: item.subItems ?? [],
         })),
         invoiceDetails: {
           ...invoice.invoiceFields.invoiceDetails,

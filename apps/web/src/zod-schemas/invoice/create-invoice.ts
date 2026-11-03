@@ -6,6 +6,12 @@ export const valueType = z.enum(["percentage", "fixed"], {
   }),
 });
 
+export const createInvoiceSubItemSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("text"), text: z.string().trim().min(1) }),
+  z.object({ type: z.literal("name"), name: z.string().trim().min(1) }),
+  z.object({ type: z.literal("priced"), name: z.string().trim().min(1), amount: z.number().finite().nonnegative() }),
+]);
+
 export const createInvoiceItemSchema = z.object(
   {
     name: z
@@ -19,7 +25,8 @@ export const createInvoiceItemSchema = z.object(
       .positive({ message: "Quantity must be positive" }),
     unitPrice: z.coerce
       .number({ invalid_type_error: "Unit price must be a number" })
-      .positive({ message: "Unit price must be positive" }),
+      .nonnegative({ message: "Unit price cannot be negative" }),
+    subItems: z.array(createInvoiceSubItemSchema).optional(),
   },
   { invalid_type_error: "Item must be an object" },
 );

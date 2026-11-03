@@ -27,7 +27,7 @@ export const getDashboardInvoicesQuery = async (userId: string) => {
             },
           },
           items: {
-            columns: { quantity: true, unitPrice: true },
+            columns: { quantity: true, unitPrice: true, subItems: true },
           },
         },
       },

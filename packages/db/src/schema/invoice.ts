@@ -103,12 +103,18 @@ export const invoiceDetailsBillingDetails = pgTable("invoice_details_billing_det
     .notNull(),
 });
 
+export type InvoiceSubItem =
+  | { type: "text"; text: string }
+  | { type: "name"; name: string }
+  | { type: "priced"; name: string; amount: number };
+
 export const invoiceItems = pgTable("invoice_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description").notNull(),
   quantity: integer("quantity").notNull(),
   unitPrice: Numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+  subItems: jsonb("sub_items").$type<InvoiceSubItem[]>().notNull().default([]),
   invoiceFieldId: uuid("invoice_field_id")
     .references(() => invoiceFields.id, { onDelete: "cascade" })
     .notNull(),
