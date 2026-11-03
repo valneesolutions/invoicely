@@ -188,7 +188,7 @@ const AssetsPage = () => {
                         <TrashIcon />
                       </Button>
                       <Image
-                        src={`${ASSET_PUBLIC_URL}/${image}`}
+                        src={`${images.data?.assetBaseUrl || ASSET_PUBLIC_URL}/${image}`}
                         alt={image}
                         width={200}
                         height={200}

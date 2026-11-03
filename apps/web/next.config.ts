@@ -3,7 +3,12 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import { resolve } from "node:path";
 
-const configuredAssetBaseUrl = process.env.NEXT_PUBLIC_ASSET_BASE_URL ?? process.env.CF_R2_PUBLIC_DOMAIN;
+const configuredAssetBaseUrl =
+  process.env.NEXT_PUBLIC_ASSET_BASE_URL ||
+  process.env.CF_R2_PUBLIC_DOMAIN ||
+  (process.env.AWS_ENDPOINT_URL_S3 && process.env.AWS_BUCKET_NAME
+    ? `${process.env.AWS_ENDPOINT_URL_S3.replace(/\/+$/, "")}/${encodeURIComponent(process.env.AWS_BUCKET_NAME)}`
+    : undefined);
 const assetBaseUrl = configuredAssetBaseUrl ? new URL(configuredAssetBaseUrl) : undefined;
 
 const nextConfig: NextConfig = {
