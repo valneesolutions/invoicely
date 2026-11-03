@@ -5,6 +5,8 @@ import { betterAuth } from "better-auth";
 import { db } from "@invoicely/db";
 
 const isCloudflarePreview = process.env.CLOUDFLARE_PREVIEW === "true";
+const usesCloudflareIpHeader =
+  isCloudflarePreview || process.env.CF_PAGES === "1" || Boolean(process.env.CF_R2_ENDPOINT);
 const cloudflarePreviewHosts = isCloudflarePreview
   ? [`*.preview.${new URL(process.env.BETTER_AUTH_URL ?? "").hostname}`]
   : [];
@@ -62,7 +64,7 @@ export const serverAuth = betterAuth({
       generateId: false,
     },
     ipAddress: {
-      ipAddressHeaders: ["cf-connecting-ip"],
+      ipAddressHeaders: usesCloudflareIpHeader ? ["cf-connecting-ip"] : ["x-forwarded-for"],
     },
   },
 });

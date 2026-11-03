@@ -17,7 +17,7 @@ export const uploadImage = async (s3: S3Client, base64: string, userId: string, 
 
   const imageUploadResult = await s3.send(
     new PutObjectCommand({
-      Bucket: env.CF_R2_BUCKET_NAME,
+      Bucket: env.AWS_BUCKET_NAME,
       Key: imageKey,
       ContentType: contentType,
       Body: imageBuffer,
@@ -25,7 +25,7 @@ export const uploadImage = async (s3: S3Client, base64: string, userId: string, 
   );
 
   if (imageUploadResult.$metadata.httpStatusCode === 200) {
-    return `${env.CF_R2_PUBLIC_DOMAIN}/${imageKey}`;
+    return `${env.NEXT_PUBLIC_ASSET_BASE_URL}/${imageKey}`;
   }
 
   return null;

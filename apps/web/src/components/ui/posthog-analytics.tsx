@@ -1,4 +1,5 @@
 import { usePostHog } from "posthog-js/react";
+import { env } from "@invoicely/utilities";
 import { IAnalytics } from "@/types";
 import * as React from "react";
 
@@ -13,7 +14,7 @@ function PostHogAnalytics({ className, analytics, onClick, as: Component = "div"
   const handleClick = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       // Track analytics event if analytics name is provided
-      if (analytics?.name && posthog) {
+      if (analytics?.name && posthog && env.NEXT_PUBLIC_POSTHOG_KEY && env.NEXT_PUBLIC_POSTHOG_HOST) {
         posthog.capture(analytics.name, {
           elementGroup: analytics.group,
         });

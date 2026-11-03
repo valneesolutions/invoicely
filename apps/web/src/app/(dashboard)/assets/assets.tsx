@@ -13,7 +13,7 @@ import { DefaultDetails } from "./default-details";
 import UploadLogoAsset from "./upload-logo-asset";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/client-auth";
-import { R2_PUBLIC_URL } from "@/constants";
+import { ASSET_PUBLIC_URL } from "@/constants";
 import { useTRPC } from "@/trpc/client";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -188,7 +188,7 @@ const AssetsPage = () => {
                         <TrashIcon />
                       </Button>
                       <Image
-                        src={`${R2_PUBLIC_URL}/${image}`}
+                        src={`${ASSET_PUBLIC_URL}/${image}`}
                         alt={image}
                         width={200}
                         height={200}

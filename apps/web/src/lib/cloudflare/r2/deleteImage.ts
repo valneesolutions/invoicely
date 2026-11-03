@@ -4,7 +4,7 @@ import { env } from "@invoicely/utilities";
 export const deleteImage = async (s3: S3Client, key: string) => {
   const deleteImageResult = await s3.send(
     new DeleteObjectCommand({
-      Bucket: env.CF_R2_BUCKET_NAME,
+      Bucket: env.AWS_BUCKET_NAME,
       Key: key,
     }),
   );
