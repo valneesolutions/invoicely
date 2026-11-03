@@ -21,6 +21,7 @@ interface InvoiceImageSelectorSheetProps {
   isLoading?: boolean;
   idbImages: IDBImage[];
   serverImages: string[];
+  assetBaseUrl?: string;
   user: AuthUser | undefined;
   onUrlChange: (url: string) => void;
   onBase64Change: (base64?: string) => void;
@@ -32,6 +33,7 @@ export const InvoiceImageSelectorSheet = ({
   isLoading = false,
   idbImages,
   serverImages,
+  assetBaseUrl,
   user,
   onUrlChange,
   onBase64Change,
@@ -41,7 +43,7 @@ export const InvoiceImageSelectorSheet = ({
 
   const handleImageSelect = (image: string, type: "server" | "local") => {
     if (type === "server") {
-      onUrlChange(`${ASSET_PUBLIC_URL}/${image}`);
+      onUrlChange(`${assetBaseUrl || ASSET_PUBLIC_URL}/${image}`);
       setSheetOpen(false);
     } else {
       onBase64Change(image);
@@ -86,7 +88,7 @@ export const InvoiceImageSelectorSheet = ({
                       onClick={() => handleImageSelect(image, "server")}
                     >
                       <Image
-                        src={`${ASSET_PUBLIC_URL}/${image}`}
+                        src={`${assetBaseUrl || ASSET_PUBLIC_URL}/${image}`}
                         alt={image}
                         width={200}
                         height={200}

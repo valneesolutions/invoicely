@@ -71,6 +71,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                     isLoading={idbImages.isLoading || serverImages.isLoading}
                     idbImages={idbImages.data || []}
                     serverImages={serverImages.data?.images || []}
+                    assetBaseUrl={serverImages.data?.assetBaseUrl}
                     user={session?.user}
                     onUrlChange={(url) => {
                       form.setValue("companyDetails.logo", url);
@@ -94,6 +95,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                     isLoading={idbImages.isLoading || serverImages.isLoading}
                     idbImages={idbImages.data || []}
                     serverImages={serverImages.data?.images || []}
+                    assetBaseUrl={serverImages.data?.assetBaseUrl}
                     user={session?.user}
                     onUrlChange={(url) => {
                       form.setValue("companyDetails.signature", url);

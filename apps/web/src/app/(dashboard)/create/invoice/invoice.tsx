@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeInvoiceFields } from "@/lib/invoice/normalize-invoice";
+
 import {
   createInvoiceSchema,
   createInvoiceSchemaDefaultValues,
@@ -29,7 +31,7 @@ const InvoicePage = ({ defaultInvoice }: { defaultInvoice?: Invoice["invoiceFiel
   // Form
   const form = useForm<ZodCreateInvoiceSchema>({
     resolver: zodResolver(createInvoiceSchema),
-    defaultValues: defaultInvoice || createInvoiceSchemaDefaultValues,
+    defaultValues: normalizeInvoiceFields(defaultInvoice || createInvoiceSchemaDefaultValues),
   });
 
   // Collapse or expand the panels based on the invoiceTab value

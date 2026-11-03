@@ -1,6 +1,7 @@
 import { createBufferFromBase64 } from "@/lib/invoice/create-buffer-from-base64";
 import { PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
 import { getImageMimeType } from "@/lib/invoice/get-image-mime";
+import { resolveAssetBaseUrl, assetUrl } from "./asset-url";
 import { InvoiceImageType } from "@/types/common/invoice";
 import { env } from "@invoicely/utilities";
 import { v4 as uuidv4 } from "uuid";
@@ -25,7 +26,14 @@ export const uploadImage = async (s3: S3Client, base64: string, userId: string, 
   );
 
   if (imageUploadResult.$metadata.httpStatusCode === 200) {
-    return `${env.NEXT_PUBLIC_ASSET_BASE_URL}/${imageKey}`;
+    return assetUrl(
+      resolveAssetBaseUrl({
+        publicBaseUrl: env.NEXT_PUBLIC_ASSET_BASE_URL,
+        endpoint: env.AWS_ENDPOINT_URL_S3,
+        bucket: env.AWS_BUCKET_NAME,
+      }),
+      imageKey,
+    );
   }
 
   return null;

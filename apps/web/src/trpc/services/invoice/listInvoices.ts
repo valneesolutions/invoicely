@@ -1,7 +1,9 @@
+import { resolveAssetBaseUrl, resolveStoredAssetUrl } from "@/lib/cloudflare/r2/asset-url";
 import { authorizedProcedure } from "@/trpc/procedures/authorizedProcedure";
 import { listInvoicesQuery } from "@/lib/db-queries/invoice/listInvoices";
 import { parseCatchError } from "@/lib/neverthrow/parseCatchError";
 import { InternalServerError } from "@/lib/effect/error/trpc";
+import { env } from "@invoicely/utilities";
 import { TRPCError } from "@trpc/server";
 import { Effect } from "effect";
 
@@ -19,6 +21,30 @@ export const listInvoices = authorizedProcedure.query(async ({ ctx }) => {
       ...invoice,
       invoiceFields: {
         ...invoice.invoiceFields,
+        companyDetails: {
+          ...invoice.invoiceFields.companyDetails,
+          logo: resolveStoredAssetUrl(
+            invoice.invoiceFields.companyDetails.logo,
+            resolveAssetBaseUrl({
+              publicBaseUrl: env.NEXT_PUBLIC_ASSET_BASE_URL,
+              endpoint: env.AWS_ENDPOINT_URL_S3,
+              bucket: env.AWS_BUCKET_NAME,
+            }),
+          ),
+          signature: resolveStoredAssetUrl(
+            invoice.invoiceFields.companyDetails.signature,
+            resolveAssetBaseUrl({
+              publicBaseUrl: env.NEXT_PUBLIC_ASSET_BASE_URL,
+              endpoint: env.AWS_ENDPOINT_URL_S3,
+              bucket: env.AWS_BUCKET_NAME,
+            }),
+          ),
+        },
+        metadata: {
+          notes: invoice.invoiceFields.metadata?.notes ?? "",
+          terms: invoice.invoiceFields.metadata?.terms ?? "",
+          paymentInformation: invoice.invoiceFields.metadata?.paymentInformation ?? [],
+        },
         items: invoice.invoiceFields.items.map((item) => ({
           ...item,
           unitPrice: item.unitPrice.toNumber(),

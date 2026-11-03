@@ -1,9 +1,11 @@
 import { authorizedProcedure } from "@/trpc/procedures/authorizedProcedure";
 import { awsS3Middleware } from "@/trpc/middlewares/awsS3Middleware";
+import { resolveAssetBaseUrl } from "@/lib/cloudflare/r2/asset-url";
 import { parseCatchError } from "@/lib/neverthrow/parseCatchError";
 import { getUserImages } from "@/lib/cloudflare/r2/getUserImages";
 import { R2StorageError } from "@/lib/effect/error/trpc";
 import { SUCCESS_MESSAGES } from "@/constants/issues";
+import { env } from "@invoicely/utilities";
 import { TRPCError } from "@trpc/server";
 import { Effect } from "effect";
 
@@ -26,6 +28,11 @@ export const listImages = authorizedProcedure.use(awsS3Middleware).query(({ ctx 
       success: true,
       message: SUCCESS_MESSAGES.IMAGES_FETCHED,
       images: mappedImageKeys,
+      assetBaseUrl: resolveAssetBaseUrl({
+        publicBaseUrl: env.NEXT_PUBLIC_ASSET_BASE_URL,
+        endpoint: env.AWS_ENDPOINT_URL_S3,
+        bucket: env.AWS_BUCKET_NAME,
+      }),
       count: images.length,
     };
   });
