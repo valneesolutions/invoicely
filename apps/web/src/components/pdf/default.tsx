@@ -197,7 +197,7 @@ const DefaultPDF: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                 wrap={true}
                 style={tw(
                   cn(
-                    "flex-row p-2 text-2xs rounded",
+                    "flex-col p-2 text-2xs rounded",
                     index % 2 === 0
                       ? darkMode
                         ? "bg-darkmode"
@@ -208,18 +208,20 @@ const DefaultPDF: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                   ),
                 )}
               >
-                <View style={tw("flex flex-col w-[60%]")}>
-                  <Text style={tw("w-full text-sm font-semibold")}>{item.name}</Text>
-                  <Text style={tw("text-xs leading-[14px] font-normal text-neutral-600")}>{item.description}</Text>
-                  <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={darkMode} />
+                <View style={tw("flex-row")}>
+                  <View style={tw("flex flex-col w-[60%]")}>
+                    <Text style={tw("w-full text-sm font-semibold")}>{item.name}</Text>
+                    <Text style={tw("text-xs leading-[14px] font-normal text-neutral-600")}>{item.description}</Text>
+                  </View>
+                  <Text style={tw("w-[10%] text-sm text-center font-geistmono tracking-tighter")}>{item.quantity}</Text>
+                  <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
+                    {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
+                  </Text>
+                  <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
+                    {formatCurrencyText(data.invoiceDetails.currency, getInvoiceItemTotal(item))}
+                  </Text>
                 </View>
-                <Text style={tw("w-[10%] text-sm text-center font-geistmono tracking-tighter")}>{item.quantity}</Text>
-                <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
-                </Text>
-                <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, getInvoiceItemTotal(item))}
-                </Text>
+                <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={darkMode} />
               </View>
             ))}
           </View>

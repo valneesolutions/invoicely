@@ -8,11 +8,17 @@ Use **Download template** in Invoice Items, then upload the filled CSV or paste 
 
 Headers: `row_type,item_ref,name,description,text,quantity,unit_price,amount,hours`.
 
+The downloaded template includes instruction rows with `row_type` set to `comment` and guidance in `text`. Keep or delete them: the importer ignores them and they do not count toward the 1,000 data-row limit. The CSV header stays first. Expand **CSV format help** beside the import controls for the same instructions and use the template's example rows for every type.
+
 - `item` declares a unique `item_ref` and parent name, description, quantity and unit price.
 - `text`, `name`, `priced`, `hours`, and `quantity_price` rows refer to their parent through `item_ref`.
 - Fixed prices use `amount`. Quantity prices use `quantity` and `unit_price`. Hours use `hours`.
 - Quoted commas, multiline fields, and UTF-8 are supported. Use decimal points and unformatted numbers; leave currency symbols out.
 - The whole CSV must validate before anything is added. Imports are limited to 1 MB and 1,000 rows.
+
+## PDF sub-item tables
+
+Both templates place full-width sub-item tables below the parent description. Groups always appear in this order: text, names, descriptive hours, fixed prices, then quantity × unit price. Each nonempty group has one set of column headers; saved order within a group is preserved. Grouping affects preview/export only and does not reorder saved items or change totals.
 
 ## Reusable account information
 
