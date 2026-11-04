@@ -1,195 +1,107 @@
-import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import { createInvoiceSchema, type ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import { normalizeInvoiceFields } from "@/lib/invoice/normalize-invoice";
 import type { InvoiceStatusType } from "@invoicely/db/schema/invoice";
-import { ERROR_MESSAGES } from "@/constants/issues";
+import type { BatchItem } from "drizzle-orm/batch";
 import { db, schema } from "@invoicely/db";
-import { v4 as uuidv4 } from "uuid";
+import { and, eq, sql } from "drizzle-orm";
+import { v4 as uuid } from "uuid";
 import Decimal from "decimal.js";
 
-interface InsertInvoiceOptions {
+export interface InvoiceWriteOptions {
   status?: InvoiceStatusType;
   paidAt?: Date | null;
 }
 
-export const insertInvoiceQuery = async (
-  invoice: ZodCreateInvoiceSchema,
+/** Build all child rows before submitting one transaction. The parent already exists within that transaction. */
+export function invoiceDetailQueries(invoice: ZodCreateInvoiceSchema, invoiceId: string): BatchItem<"pg">[] {
+  const f = uuid(),
+    company = uuid(),
+    client = uuid(),
+    details = uuid(),
+    metadata = uuid();
+  const q: BatchItem<"pg">[] = [
+    db.insert(schema.invoiceFields).values({ id: f, invoiceId }),
+    db.insert(schema.invoiceCompanyDetails).values({ id: company, invoiceFieldId: f, ...invoice.companyDetails }),
+    db.insert(schema.invoiceClientDetails).values({ id: client, invoiceFieldId: f, ...invoice.clientDetails }),
+    db.insert(schema.invoiceDetails).values({ id: details, invoiceFieldId: f, ...invoice.invoiceDetails }),
+    db
+      .insert(schema.invoiceMetadata)
+      .values({ id: metadata, invoiceFieldId: f, notes: invoice.metadata.notes, terms: invoice.metadata.terms }),
+  ];
+  if (invoice.companyDetails.metadata.length)
+    q.push(
+      db
+        .insert(schema.invoiceCompanyDetailsMetadata)
+        .values(invoice.companyDetails.metadata.map((x) => ({ id: uuid(), invoiceCompanyDetailsId: company, ...x }))),
+    );
+  if (invoice.clientDetails.metadata.length)
+    q.push(
+      db
+        .insert(schema.invoiceClientDetailsMetadata)
+        .values(invoice.clientDetails.metadata.map((x) => ({ id: uuid(), invoiceClientDetailsId: client, ...x }))),
+    );
+  if (invoice.invoiceDetails.billingDetails.length)
+    q.push(
+      db.insert(schema.invoiceDetailsBillingDetails).values(
+        invoice.invoiceDetails.billingDetails.map((x) => ({
+          id: uuid(),
+          invoiceDetailsId: details,
+          ...x,
+          value: new Decimal(x.value),
+        })),
+      ),
+    );
+  if (invoice.items.length)
+    q.push(
+      db.insert(schema.invoiceItems).values(
+        invoice.items.map((x) => ({
+          id: uuid(),
+          invoiceFieldId: f,
+          ...x,
+          unitPrice: new Decimal(x.unitPrice),
+          subItems: x.subItems ?? [],
+        })),
+      ),
+    );
+  if (invoice.metadata.paymentInformation.length)
+    q.push(
+      db
+        .insert(schema.invoiceMetadataPaymentInformation)
+        .values(invoice.metadata.paymentInformation.map((x) => ({ id: uuid(), invoiceMetadataId: metadata, ...x }))),
+    );
+  return q;
+}
+
+export async function insertInvoiceQuery(
+  input: ZodCreateInvoiceSchema,
   userId: string,
-  id?: string,
-  options?: InsertInvoiceOptions,
-) => {
-  // Inserting invoice in db
-  const [insertedInvoice] = await db
-    .insert(schema.invoices)
-    .values({
-      id: id ?? uuidv4(),
-      type: "server",
-      status: options?.status ?? "pending",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      paidAt: options?.paidAt ?? undefined,
-      userId: userId,
-    })
-    .returning({
-      id: schema.invoices.id,
-    });
+  id = uuid(),
+  options: InvoiceWriteOptions = {},
+) {
+  const invoice = createInvoiceSchema.parse(normalizeInvoiceFields(input));
+  await db.batch([
+    db
+      .insert(schema.invoices)
+      .values({ id, userId, type: "server", status: options.status ?? "pending", paidAt: options.paidAt ?? null }),
+    ...invoiceDetailQueries(invoice, id),
+  ]);
+  return id;
+}
 
-  if (!insertedInvoice) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ invoice record");
-  }
-
-  // Inserting invoice field in db
-  const [insertedInvoiceField] = await db
-    .insert(schema.invoiceFields)
-    .values({
-      id: uuidv4(),
-      invoiceId: insertedInvoice.id,
-    })
-    .returning({
-      id: schema.invoiceFields.id,
-    });
-
-  if (!insertedInvoiceField) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ invoice field record");
-  }
-
-  // Inserting company details in db
-  const [insertedCompanyDetails] = await db
-    .insert(schema.invoiceCompanyDetails)
-    .values({
-      id: uuidv4(),
-      name: invoice.companyDetails.name,
-      address: invoice.companyDetails.address,
-      invoiceFieldId: insertedInvoiceField.id,
-      logo: invoice.companyDetails.logo,
-      signature: invoice.companyDetails.signature,
-    })
-    .returning({
-      id: schema.invoiceCompanyDetails.id,
-    });
-
-  if (!insertedCompanyDetails) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ company details record");
-  }
-
-  // Inserting company details metadata in db
-  if (invoice.companyDetails.metadata.length > 0) {
-    await db.insert(schema.invoiceCompanyDetailsMetadata).values(
-      invoice.companyDetails.metadata.map((metadata) => ({
-        id: uuidv4(),
-        label: metadata.label,
-        value: metadata.value,
-        invoiceCompanyDetailsId: insertedCompanyDetails.id,
-      })),
-    );
-  }
-
-  // Inserting client details in db
-  const [insertedClientDetails] = await db
-    .insert(schema.invoiceClientDetails)
-    .values({
-      id: uuidv4(),
-      name: invoice.clientDetails.name,
-      address: invoice.clientDetails.address,
-      invoiceFieldId: insertedInvoiceField.id,
-    })
-    .returning({
-      id: schema.invoiceClientDetails.id,
-    });
-
-  if (!insertedClientDetails) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ client details record");
-  }
-
-  // Inserting client details metadata in db
-  if (invoice.clientDetails.metadata.length > 0) {
-    await db.insert(schema.invoiceClientDetailsMetadata).values(
-      invoice.clientDetails.metadata.map((metadata) => ({
-        id: uuidv4(),
-        label: metadata.label,
-        value: metadata.value,
-        invoiceClientDetailsId: insertedClientDetails.id,
-      })),
-    );
-  }
-
-  // Inserting invoice details in db
-  const [insertedInvoiceDetails] = await db
-    .insert(schema.invoiceDetails)
-    .values({
-      id: uuidv4(),
-      currency: invoice.invoiceDetails.currency,
-      prefix: invoice.invoiceDetails.prefix,
-      serialNumber: invoice.invoiceDetails.serialNumber,
-      date: invoice.invoiceDetails.date,
-      dueDate: invoice.invoiceDetails.dueDate,
-      paymentTerms: invoice.invoiceDetails.paymentTerms,
-      theme: invoice.invoiceDetails.theme,
-      invoiceFieldId: insertedInvoiceField.id,
-    })
-    .returning({
-      id: schema.invoiceDetails.id,
-    });
-
-  if (!insertedInvoiceDetails) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ invoice details record");
-  }
-
-  // Inserting invoice billing information in db
-  if (invoice.invoiceDetails.billingDetails.length > 0) {
-    await db.insert(schema.invoiceDetailsBillingDetails).values(
-      invoice.invoiceDetails.billingDetails.map((billingDetail) => ({
-        id: uuidv4(),
-        label: billingDetail.label,
-        invoiceDetailsId: insertedInvoiceDetails.id,
-        value: new Decimal(billingDetail.value),
-        type: billingDetail.type,
-      })),
-    );
-  }
-
-  // Inserting invoice items in db
-  if (invoice.items.length > 0) {
-    await db.insert(schema.invoiceItems).values(
-      invoice.items.map((item) => ({
-        id: uuidv4(),
-        description: item.description,
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: new Decimal(item.unitPrice),
-        subItems: item.subItems ?? [],
-        invoiceFieldId: insertedInvoiceField.id,
-      })),
-    );
-  }
-
-  // Inserting invoice metadata in db
-  const [insertedInvoiceMetadata] = await db
-    .insert(schema.invoiceMetadata)
-    .values({
-      id: uuidv4(),
-      notes: invoice.metadata.notes,
-      terms: invoice.metadata.terms,
-      invoiceFieldId: insertedInvoiceField.id,
-    })
-    .returning({
-      id: schema.invoiceMetadata.id,
-    });
-
-  if (!insertedInvoiceMetadata) {
-    throw new Error(ERROR_MESSAGES.FAILED_TO_INSERT_DATA + "~ invoice metadata record");
-  }
-
-  // Inserting invoice metadata payment information in db
-  if (invoice.metadata.paymentInformation.length > 0) {
-    await db.insert(schema.invoiceMetadataPaymentInformation).values(
-      invoice.metadata.paymentInformation.map((paymentInformation) => ({
-        id: uuidv4(),
-        label: paymentInformation.label,
-        value: paymentInformation.value,
-        invoiceMetadataId: insertedInvoiceMetadata.id,
-      })),
-    );
-  }
-
-  // after successfully inserting return the invoice id
-  return insertedInvoice.id;
-};
+export async function replaceInvoiceQuery(input: ZodCreateInvoiceSchema, userId: string, id: string) {
+  const invoice = createInvoiceSchema.parse(normalizeInvoiceFields(input));
+  // Lock the owned parent and keep all its financial status and creation fields.
+  // The ownership assertion aborts the batch if the invoice disappeared or belongs to somebody else.
+  await db.batch([
+    db
+      .update(schema.invoices)
+      .set({ updatedAt: new Date() })
+      .where(and(eq(schema.invoices.id, id), eq(schema.invoices.userId, userId))),
+    db.execute(
+      sql`SELECT 1 / CASE WHEN EXISTS (SELECT 1 FROM ${schema.invoices} WHERE id = ${id} AND user_id = ${userId}) THEN 1 ELSE 0 END`,
+    ),
+    db.delete(schema.invoiceFields).where(eq(schema.invoiceFields.invoiceId, id)),
+    ...invoiceDetailQueries(invoice, id),
+  ]);
+  return id;
+}

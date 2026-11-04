@@ -1,3 +1,4 @@
+import { getItemAmount, type FinancialItem } from "@/lib/invoice/item-totals";
 import Decimal from "decimal.js";
 
 // Keep calculations independent of Decimal configuration used elsewhere in the app.
@@ -19,7 +20,7 @@ export interface DashboardInvoice {
       dueDate?: DashboardDate | null;
       billingDetails: { type: "fixed" | "percentage"; value: Decimal.Value }[];
     };
-    items: { quantity: Decimal.Value; unitPrice: Decimal.Value; subItems?: { type: string; amount?: number }[] }[];
+    items: FinancialItem[];
   };
 }
 
@@ -68,18 +69,7 @@ export function mergeDashboardInvoices(
 
 /** Same formula as the PDF: percentages apply to the subtotal, then round the invoice to two decimals. */
 export function getDashboardInvoiceTotal(invoice: DashboardInvoice): string {
-  const subtotal = invoice.invoiceFields.items.reduce(
-    (sum, item) =>
-      sum
-        .plus(new Money(item.quantity).times(item.unitPrice))
-        .plus(
-          (item.subItems ?? []).reduce(
-            (amount, sub) => (sub.type === "priced" ? amount.plus(sub.amount ?? 0) : amount),
-            new Money(0),
-          ),
-        ),
-    new Money(0),
-  );
+  const subtotal = invoice.invoiceFields.items.reduce((sum, item) => sum.plus(getItemAmount(item)), new Money(0));
 
   return invoice.invoiceFields.invoiceDetails.billingDetails
     .reduce(

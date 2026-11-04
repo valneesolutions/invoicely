@@ -7,6 +7,13 @@ export const valueType = z.enum(["percentage", "fixed"], {
 });
 
 export const createInvoiceSubItemSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("hours"), name: z.string().trim().min(1), hours: z.number().finite().nonnegative() }),
+  z.object({
+    type: z.literal("quantity_price"),
+    name: z.string().trim().min(1),
+    quantity: z.number().finite().positive(),
+    unitPrice: z.number().finite().nonnegative(),
+  }),
   z.object({ type: z.literal("text"), text: z.string().trim().min(1) }),
   z.object({ type: z.literal("name"), name: z.string().trim().min(1) }),
   z.object({ type: z.literal("priced"), name: z.string().trim().min(1), amount: z.number().finite().nonnegative() }),
@@ -22,9 +29,13 @@ export const createInvoiceItemSchema = z.object(
     }),
     quantity: z.coerce
       .number({ invalid_type_error: "Quantity must be a number" })
+      .int("Parent item quantity must be a whole number; use sub-items for fractional quantities")
       .positive({ message: "Quantity must be positive" }),
     unitPrice: z.coerce
       .number({ invalid_type_error: "Unit price must be a number" })
+      .finite()
+      .max(99999999.99, "Unit price is too large")
+      .multipleOf(0.01, "Use at most two decimal places for the parent unit price")
       .nonnegative({ message: "Unit price cannot be negative" }),
     subItems: z.array(createInvoiceSubItemSchema).optional(),
   },

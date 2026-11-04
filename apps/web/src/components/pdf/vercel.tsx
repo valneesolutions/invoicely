@@ -9,6 +9,7 @@ import { formatAmountInWords } from "@/lib/invoice/amount-in-words";
 import { GEIST_FONT, GEIST_MONO_FONT } from "@/constants/pdf-fonts";
 import { formatCurrencyText } from "@/constants/currency";
 import { createTw } from "react-pdf-tailwind";
+import { PdfSubItems } from "./sub-items";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import React from "react";
@@ -166,7 +167,7 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
             {data.items.map((item, index) => (
               <View
                 key={index}
-                wrap={false}
+                wrap={true}
                 style={tw(
                   cn(
                     "flex-row px-4 py-3 text-2xs border-b border-borderColor",
@@ -179,15 +180,7 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                   <Text style={tw("text-2xs leading-[10px] mt-1 font-normal text-neutral-700")}>
                     {item.description}
                   </Text>
-                  {(item.subItems ?? []).map((sub, i) => (
-                    <Text key={i} style={tw("text-[8px] text-neutral-500 pl-2")}>
-                      {sub.type === "text"
-                        ? sub.text
-                        : sub.type === "priced"
-                          ? `${sub.name} — ${formatCurrencyText(data.invoiceDetails.currency, sub.amount)}`
-                          : sub.name}
-                    </Text>
-                  ))}
+                  <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={true} />
                 </View>
                 <Text style={tw("w-[10%] text-center font-geistmono tracking-tighter text-neutral-100")}>
                   {item.quantity}

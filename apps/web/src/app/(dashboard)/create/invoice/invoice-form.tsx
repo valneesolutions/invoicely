@@ -6,6 +6,7 @@ import { Accordion, AccordionItem, AccordionContent, AccordionTrigger } from "@/
 import SheetImageSelectorTrigger from "@/components/ui/image/sheet-image-selector-trigger";
 import { InvoiceImageSelectorSheet } from "./invoiceHelpers/invoice-image-selector-sheet";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import { SavedClientSelector } from "./invoiceHelpers/saved-client-selector";
 import { InvoiceTemplateSelector } from "./invoiceHelpers/invoice-templates";
 import { FormColorPicker } from "@/components/ui/form/form-color-picker";
 import InvoiceItemsSection from "./invoiceHelpers/invoice-items-section";
@@ -71,6 +72,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                     isLoading={idbImages.isLoading || serverImages.isLoading}
                     idbImages={idbImages.data || []}
                     serverImages={serverImages.data?.images || []}
+                    assetBaseUrl={serverImages.data?.assetBaseUrl}
                     user={session?.user}
                     onUrlChange={(url) => {
                       form.setValue("companyDetails.logo", url);
@@ -94,6 +96,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
                     isLoading={idbImages.isLoading || serverImages.isLoading}
                     idbImages={idbImages.data || []}
                     serverImages={serverImages.data?.images || []}
+                    assetBaseUrl={serverImages.data?.assetBaseUrl}
                     user={session?.user}
                     onUrlChange={(url) => {
                       form.setValue("companyDetails.signature", url);
@@ -140,6 +143,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ form }) => {
             <AccordionItem value="client-details">
               <AccordionTrigger>Client Details</AccordionTrigger>
               <AccordionContent>
+                <SavedClientSelector form={form} />
                 <FormInput name="clientDetails.name" label="Client Name" reactform={form} placeholder="John Doe" />
                 <FormTextarea
                   className="h-20"

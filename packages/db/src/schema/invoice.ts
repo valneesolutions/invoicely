@@ -104,6 +104,8 @@ export const invoiceDetailsBillingDetails = pgTable("invoice_details_billing_det
 });
 
 export type InvoiceSubItem =
+  | { type: "hours"; name: string; hours: number }
+  | { type: "quantity_price"; name: string; quantity: number; unitPrice: number }
   | { type: "text"; text: string }
   | { type: "name"; name: string }
   | { type: "priced"; name: string; amount: number };

@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeInvoiceFields } from "@/lib/invoice/normalize-invoice";
+
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from "@/constants/issues";
 import type { InvoiceTypeType } from "@invoicely/db/schema/invoice";
 import InvoicePage from "@/app/(dashboard)/create/invoice/invoice";
@@ -34,23 +36,10 @@ const EditInvoice = ({ type, id }: EditInvoiceProps) => {
       }
 
       if (fetchedInvoice) {
-        if (type === "local") {
-          // we need to convert image url and sig url to local base64
-          const invoiceFields = fetchedInvoice.invoiceFields;
-          const imageBase64 = invoiceFields.companyDetails.logoBase64;
-          const sigBase64 = invoiceFields.companyDetails.signatureBase64;
-
-          if (!invoiceFields.companyDetails.logo?.startsWith("https://")) {
-            invoiceFields.companyDetails.logo = imageBase64;
-          }
-          if (!invoiceFields.companyDetails.signature?.startsWith("https://")) {
-            invoiceFields.companyDetails.signature = sigBase64;
-          }
-
-          setInvoice(fetchedInvoice);
-        } else {
-          setInvoice(fetchedInvoice);
-        }
+        setInvoice({
+          ...fetchedInvoice,
+          invoiceFields: normalizeInvoiceFields(fetchedInvoice.invoiceFields, undefined, true),
+        });
         setIsLoading(false);
       } else {
         throw new Error(ERROR_MESSAGES.INVOICE_NOT_FOUND);

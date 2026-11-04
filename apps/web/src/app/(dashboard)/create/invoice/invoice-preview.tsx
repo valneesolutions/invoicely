@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  createInvoiceSchema,
-  createInvoiceSchemaDefaultValues,
-  ZodCreateInvoiceSchema,
-} from "@/zod-schemas/invoice/create-invoice";
+import { createInvoiceSchema, ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { createBlobUrl, revokeBlobUrl } from "@/lib/invoice/create-blob-url";
 import { parseCatchError } from "@/lib/neverthrow/parseCatchError";
 import { invoiceErrorAtom } from "@/global/atoms/invoice-atom";
@@ -79,10 +75,10 @@ const InvoicePreview = ({ form }: { form: UseFormReturn<ZodCreateInvoiceSchema> 
   const isClient = useMounted();
   const [resizeRef, container] = useResizeObserver();
   const setInvoiceError = useSetAtom(invoiceErrorAtom);
-  const [data, setData] = useState(form.getValues());
+  const [data, setData] = useState<ZodCreateInvoiceSchema | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
-  const lastProcessedValueRef = useRef<ZodCreateInvoiceSchema>(createInvoiceSchemaDefaultValues);
+  const lastProcessedValueRef = useRef<ZodCreateInvoiceSchema | null>(null);
 
   // Watch for form changes, debounce input, validate, and then update data/errors
   useEffect(() => {
@@ -94,12 +90,14 @@ const InvoicePreview = ({ form }: { form: UseFormReturn<ZodCreateInvoiceSchema> 
       const isDataValid = createInvoiceSchema.safeParse(value);
       // If the data is valid, set the data to invoice and clear the errors
       if (isDataValid.success) {
-        setData(value);
+        setData(isDataValid.data);
         setInvoiceError([]);
       } else {
         setInvoiceError(isDataValid.error.issues);
       }
     };
+
+    processFormValue(form.getValues());
 
     // Create a debounced version of the processing function
     const debouncedProcessFormValue = debounce(processFormValue, 1000);
@@ -118,37 +116,28 @@ const InvoicePreview = ({ form }: { form: UseFormReturn<ZodCreateInvoiceSchema> 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form]);
 
-  // Effect to generate PDF when data changes
+  // Each generation owns its URL; discard stale results after editing or unmounting.
   useEffect(() => {
+    if (!data) return;
+    let disposed = false;
+    let url: string | undefined;
     setPdfError(null);
-
     (async () => {
       try {
-        const blob = await createPdfBlob({ invoiceData: data, template: form.watch("invoiceDetails.theme.template") });
-        const newUrl = createBlobUrl({ blob });
-
-        setGeneratedPdfUrl(newUrl);
+        const blob = await createPdfBlob({ invoiceData: data, template: data.invoiceDetails.theme.template });
+        if (disposed) return;
+        url = createBlobUrl({ blob });
+        setGeneratedPdfUrl(url);
       } catch (err) {
+        if (disposed) return;
         setPdfError(parseCatchError(err, ERROR_MESSAGES.FAILED_TO_GENERATE_PDF));
-        // Send the error to Sentry
-        Sentry.captureException(err, {
-          level: "debug",
-        });
-        if (generatedPdfUrl) {
-          revokeBlobUrl({ url: generatedPdfUrl });
-        }
+        Sentry.captureException(err, { level: "debug" });
       }
     })();
-
-    // Cleanup on component unmount or when data changes again (before new generation)
     return () => {
-      if (generatedPdfUrl) {
-        revokeBlobUrl({ url: generatedPdfUrl });
-      }
+      disposed = true;
+      if (url) revokeBlobUrl({ url });
     };
-
-    // Dont Include generatedPdfUrl in the dependency array as it will cause infinite re-renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   // If there is an error loading the PDF, show an error message

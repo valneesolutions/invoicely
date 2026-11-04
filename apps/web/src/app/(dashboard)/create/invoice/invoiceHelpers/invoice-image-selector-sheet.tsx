@@ -6,6 +6,7 @@ import { createBlobFromBase64 } from "@/lib/invoice/create-blob-from-base64";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import UploadLogoAsset from "@/app/(dashboard)/assets/upload-logo-asset";
 import { getImagesWithKey } from "@/lib/manage-assets/getImagesWithKey";
+import { AssetImage as Image } from "@/components/ui/image/asset-image";
 import EmptySection from "@/components/ui/icon-placeholder";
 import { InvoiceImageType } from "@/types/common/invoice";
 import { IDBImage } from "@/types/indexdb/invoice";
@@ -13,7 +14,6 @@ import { ASSET_PUBLIC_URL } from "@/constants";
 import { useParams } from "next/navigation";
 import { AuthUser } from "@/types/auth";
 import { useState } from "react";
-import Image from "next/image";
 
 interface InvoiceImageSelectorSheetProps {
   children: React.ReactNode;
@@ -21,6 +21,7 @@ interface InvoiceImageSelectorSheetProps {
   isLoading?: boolean;
   idbImages: IDBImage[];
   serverImages: string[];
+  assetBaseUrl?: string;
   user: AuthUser | undefined;
   onUrlChange: (url: string) => void;
   onBase64Change: (base64?: string) => void;
@@ -32,6 +33,7 @@ export const InvoiceImageSelectorSheet = ({
   isLoading = false,
   idbImages,
   serverImages,
+  assetBaseUrl,
   user,
   onUrlChange,
   onBase64Change,
@@ -41,7 +43,7 @@ export const InvoiceImageSelectorSheet = ({
 
   const handleImageSelect = (image: string, type: "server" | "local") => {
     if (type === "server") {
-      onUrlChange(`${ASSET_PUBLIC_URL}/${image}`);
+      onUrlChange(`${assetBaseUrl || ASSET_PUBLIC_URL}/${image}`);
       setSheetOpen(false);
     } else {
       onBase64Change(image);
@@ -86,8 +88,8 @@ export const InvoiceImageSelectorSheet = ({
                       onClick={() => handleImageSelect(image, "server")}
                     >
                       <Image
-                        src={`${ASSET_PUBLIC_URL}/${image}`}
-                        alt={image}
+                        src={`${assetBaseUrl || ASSET_PUBLIC_URL}/${image}`}
+                        alt={`${type} preview`}
                         width={200}
                         height={200}
                         className="aspect-square w-full rounded-md border object-cover"

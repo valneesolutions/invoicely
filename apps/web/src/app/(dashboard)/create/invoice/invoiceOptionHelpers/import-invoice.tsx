@@ -1,6 +1,9 @@
+import { normalizeInvoiceFields, invoiceImageWarnings } from "@/lib/invoice/normalize-invoice";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
+import { ASSET_PUBLIC_URL } from "@/constants";
+import { toast } from "sonner";
 import * as React from "react";
 
 import {
@@ -47,22 +50,8 @@ const ImportInvoice = ({ form }: { form: UseFormReturn<ZodCreateInvoiceSchema> }
   const data = [...(trpcData.data ?? []), ...(idbData.data ?? [])];
 
   const handleRowClick = (invoice: Invoice) => {
-    if (invoice.type === "local") {
-      // we need to convert image url and sig url to local base64
-      const invoiceFields = invoice.invoiceFields;
-      const imageBase64 = invoiceFields.companyDetails.logoBase64;
-      const sigBase64 = invoiceFields.companyDetails.signatureBase64;
-
-      if (!invoiceFields.companyDetails.logo?.startsWith("https://")) {
-        invoiceFields.companyDetails.logo = imageBase64;
-      }
-      if (!invoiceFields.companyDetails.signature?.startsWith("https://")) {
-        invoiceFields.companyDetails.signature = sigBase64;
-      }
-    }
-
-    // Reset form field to imported invoice
-    form.reset(invoice.invoiceFields);
+    for (const warning of invoiceImageWarnings(invoice.invoiceFields)) toast.warning(warning);
+    form.reset(normalizeInvoiceFields(invoice.invoiceFields, ASSET_PUBLIC_URL));
     setOpen(false);
   };
 

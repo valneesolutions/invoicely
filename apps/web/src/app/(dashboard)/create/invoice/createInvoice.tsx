@@ -6,6 +6,8 @@ import { useNextInvoiceNumber } from "@/hooks/use-next-invoice-number";
 import PDFLoading from "@/components/layout/pdf/pdf-loading";
 import { SUCCESS_MESSAGES } from "@/constants/issues";
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "@/lib/client-auth";
+import { useTRPC } from "@/trpc/client";
 import InvoicePage from "./invoice";
 import React from "react";
 
@@ -14,13 +16,16 @@ import React from "react";
 // them as the form's defaults before mounting, so the shared InvoicePage stays
 // unaware of create-vs-edit. Editing existing invoices goes through EditInvoice.
 const CreateInvoice = () => {
+  const trpc = useTRPC();
+  const { data: session, isPending: isSessionPending } = useSession();
+  const preferences = useQuery({ ...trpc.preferences.get.queryOptions(), enabled: !!session?.user });
   const { nextInvoiceNumber, isLoading } = useNextInvoiceNumber();
   const { data: savedDetails, isPending: isDetailsLoading } = useQuery({
     queryKey: ["idb-default-details"],
     queryFn: getDefaultDetails,
   });
 
-  if (isLoading || isDetailsLoading) {
+  if (isLoading || isDetailsLoading || isSessionPending || (!!session?.user && preferences.isPending)) {
     return (
       <PDFLoading
         message={SUCCESS_MESSAGES.PREPARING_INVOICE}
@@ -49,6 +54,10 @@ const CreateInvoice = () => {
       address: savedClient?.address || defaultClient.address,
       metadata: savedClient?.metadata?.length ? savedClient.metadata : defaultClient.metadata,
     },
+    metadata: {
+      ...createInvoiceSchemaDefaultValues.metadata,
+      paymentInformation: structuredClone(preferences.data?.paymentInformation ?? []),
+    },
     invoiceDetails: {
       ...createInvoiceSchemaDefaultValues.invoiceDetails,
       prefix: nextInvoiceNumber.prefix,
@@ -56,7 +65,16 @@ const CreateInvoice = () => {
     },
   };
 
-  return <InvoicePage defaultInvoice={defaultInvoice} />;
+  return (
+    <>
+      {preferences.isError && session?.user && (
+        <p role="alert" className="p-3 text-sm text-amber-700">
+          Could not load your default payment information. Enter it manually in Additional Information.
+        </p>
+      )}
+      <InvoicePage defaultInvoice={defaultInvoice} />
+    </>
+  );
 };
 
 export default CreateInvoice;

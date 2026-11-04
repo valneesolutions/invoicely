@@ -1,6 +1,9 @@
 import { PdfTemplateName } from "@/app/(dashboard)/create/invoice/invoiceHelpers/invoice-templates";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import { createInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
+import { normalizeInvoiceFields } from "./normalize-invoice";
 import { DefaultPDF, VercelPDF } from "@/components/pdf";
+import { createSerialTaskQueue } from "./serial-task";
 import { pdf } from "@react-pdf/renderer";
 
 interface CreatePdfBlobProps {
@@ -8,13 +11,15 @@ interface CreatePdfBlobProps {
   invoiceData: ZodCreateInvoiceSchema;
 }
 
-export const createPdfBlob = async ({ invoiceData, template }: CreatePdfBlobProps) => {
-  const Template = getPdfTemplate(template);
+const renderSerially = createSerialTaskQueue();
 
-  const pdfDocument = <Template data={invoiceData} />;
-  const blob = await pdf(pdfDocument).toBlob();
-
-  return blob;
+export const createPdfBlob = ({ invoiceData, template }: CreatePdfBlobProps): Promise<Blob> => {
+  // Parse produces an independent snapshot and repairs legacy optional sections before rendering.
+  const data = createInvoiceSchema.parse(normalizeInvoiceFields(invoiceData));
+  return renderSerially(async () => {
+    const Template = getPdfTemplate(template);
+    return pdf(<Template data={data} />).toBlob();
+  });
 };
 
 const getPdfTemplate = (template: CreatePdfBlobProps["template"]) => {
