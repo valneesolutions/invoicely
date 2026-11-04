@@ -26,6 +26,8 @@ Server invoice create, edit and migration use one transactional Neon HTTP batch.
 
 Image keys and relative paths resolve against the server-configured storage URL. Public bucket settings and browser CORS must permit image retrieval. Local temporary image references recover from base64 when available; otherwise the UI asks the user to select/upload the image again.
 
+PDF generation retrieves remote logos/signatures with CORS and embeds their bytes before rendering. It bypasses older image-cache responses that lack CORS headers, reuses successful image loads, and reports retrieval failures instead of silently exporting without the image.
+
 ## Checks and release
 
 Run `corepack yarn build`, then `node --test scripts/*.test.mjs apps/web/src/lib/invoice/move-invoice-to-server.test.mjs`.
