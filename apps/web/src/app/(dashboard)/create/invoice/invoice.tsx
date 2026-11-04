@@ -1,6 +1,7 @@
 "use client";
 
-import { normalizeInvoiceFields } from "@/lib/invoice/normalize-invoice";
+import { normalizeInvoiceFields, invoiceImageWarnings } from "@/lib/invoice/normalize-invoice";
+import { ASSET_PUBLIC_URL } from "@/constants";
 
 import {
   createInvoiceSchema,
@@ -31,7 +32,7 @@ const InvoicePage = ({ defaultInvoice }: { defaultInvoice?: Invoice["invoiceFiel
   // Form
   const form = useForm<ZodCreateInvoiceSchema>({
     resolver: zodResolver(createInvoiceSchema),
-    defaultValues: normalizeInvoiceFields(defaultInvoice || createInvoiceSchemaDefaultValues),
+    defaultValues: normalizeInvoiceFields(defaultInvoice || createInvoiceSchemaDefaultValues, ASSET_PUBLIC_URL),
   });
 
   // Collapse or expand the panels based on the invoiceTab value
@@ -78,6 +79,12 @@ const InvoicePage = ({ defaultInvoice }: { defaultInvoice?: Invoice["invoiceFiel
 
   return (
     <div className="flex h-full flex-col">
+      {defaultInvoice &&
+        invoiceImageWarnings(defaultInvoice).map((warning) => (
+          <p role="alert" key={warning} className="border-b p-3 text-sm text-amber-700">
+            {warning}
+          </p>
+        ))}
       <InvoiceOptions form={form} />
       <ResizablePanelGroup direction="horizontal" className="divide-x">
         <ResizablePanel collapsible={true} defaultSize={50} ref={invoiceFormPanelRef}>

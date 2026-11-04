@@ -70,6 +70,14 @@ test("local images recover base64 from expired blobs and retain valid data/HTTP 
   assert.equal(normalizeInvoiceFields(data).companyDetails.logo, base64);
   assert.equal(normalizeInvoiceFields(data).companyDetails.signature, data.companyDetails.signature);
   assert.equal(
+    normalizeInvoiceFields(
+      { ...data, companyDetails: { ...data.companyDetails, logoBase64: undefined } },
+      undefined,
+      true,
+    ).companyDetails.logo,
+    "blob:expired",
+  );
+  assert.equal(
     normalizeInvoiceFields({ ...data, companyDetails: { ...data.companyDetails, logoBase64: undefined } })
       .companyDetails.logo,
     undefined,

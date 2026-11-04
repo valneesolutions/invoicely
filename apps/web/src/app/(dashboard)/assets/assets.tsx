@@ -4,18 +4,19 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ImageSparkleIcon, SignatureIcon, TrashIcon, IdBadgeIcon } from "@/assets/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getImagesWithKey } from "@/lib/manage-assets/getImagesWithKey";
+import { AssetImage as Image } from "@/components/ui/image/asset-image";
 import { deleteImageFromIDB } from "@/lib/indexdb-queries/deleteImage";
 import { ERROR_MESSAGES, SUCCESS_MESSAGES } from "@/constants/issues";
 import { getAllImages } from "@/lib/indexdb-queries/getAllImages";
 import EmptySection from "@/components/ui/icon-placeholder";
 import UploadSignatureAsset from "./upload-signature.asset";
 import { DefaultDetails } from "./default-details";
+import { AccountPresets } from "./account-presets";
 import UploadLogoAsset from "./upload-logo-asset";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/client-auth";
 import { ASSET_PUBLIC_URL } from "@/constants";
 import { useTRPC } from "@/trpc/client";
-import Image from "next/image";
 import { toast } from "sonner";
 import React from "react";
 
@@ -107,17 +108,6 @@ const AssetsPage = () => {
     );
   }
 
-  if (images.isError) {
-    return (
-      <div className="flex h-full items-center justify-center text-red-500">
-        <EmptySection
-          title={ERROR_MESSAGES.DEFAULT}
-          description={`${ERROR_MESSAGES.FETCHING_ASSETS} ${images.failureReason}`}
-        />
-      </div>
-    );
-  }
-
   const handleDeleteImage = async (imageId: string, type: "server" | "local") => {
     if (session?.user && type === "server") {
       // Delete image from  server
@@ -129,9 +119,17 @@ const AssetsPage = () => {
 
   return (
     <div>
+      {images.isError && (
+        <div role="alert" className="text-destructive flex items-center gap-3 border-b p-3 text-sm">
+          Could not load server images. Clients and payment information are still available.
+          <Button type="button" variant="outline" onClick={() => images.refetch()}>
+            Retry images
+          </Button>
+        </div>
+      )}
       <Accordion
         type="multiple"
-        defaultValue={[typeOfImages[0].key, typeOfImages[1].key, "details"]}
+        defaultValue={[typeOfImages[0].key, typeOfImages[1].key, "details", "account-presets"]}
         className="w-full divide-y border-b"
       >
         <AccordionItem value="details">
@@ -151,6 +149,12 @@ const AssetsPage = () => {
             <div className="mt-4">
               <DefaultDetails />
             </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="account-presets">
+          <AccordionTrigger>Clients & payment information</AccordionTrigger>
+          <AccordionContent>
+            <AccountPresets />
           </AccordionContent>
         </AccordionItem>
         {typeOfImages.map((type) => (
@@ -189,7 +193,7 @@ const AssetsPage = () => {
                       </Button>
                       <Image
                         src={`${images.data?.assetBaseUrl || ASSET_PUBLIC_URL}/${image}`}
-                        alt={image}
+                        alt="Saved image"
                         width={200}
                         height={200}
                         className="aspect-square w-full rounded-md object-cover"

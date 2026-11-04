@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/dialog";
 import { createInvoiceItemSchema, ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { useFieldArray, useForm, UseFormReturn } from "react-hook-form";
+import { SubItemSummary } from "@/components/invoice/sub-item-summary";
 import { FormTextarea } from "@/components/ui/form/form-textarea";
 import { BoxIcon, BoxPlusIcon, TrashIcon } from "@/assets/icons";
 import { getInvoiceItemTotal } from "@/constants/pdf-helpers";
 import { FormInput } from "@/components/ui/form/form-input";
 import { GripVerticalIcon, PencilIcon } from "lucide-react";
 import { formatCurrencyText } from "@/constants/currency";
+import { BulkInvoiceItems } from "./bulk-invoice-items";
 import { zodResolver } from "@hookform/resolvers/zod";
 import FormRow from "@/components/ui/form/form-row";
 import { Form } from "@/components/ui/form/form";
@@ -47,6 +49,7 @@ const InvoiceItemsSection: React.FC<InvoiceItemsSectionProps> = ({ form }) => {
 
   return (
     <div className="flex flex-col gap-2">
+      <BulkInvoiceItems form={form} append={append} />
       {/* Rendering the items */}
       {fields.length > 0 && (
         <Reorder.Group
@@ -61,37 +64,34 @@ const InvoiceItemsSection: React.FC<InvoiceItemsSectionProps> = ({ form }) => {
               key={field.id}
               className="bg-muted/50 flex w-full cursor-grab flex-row justify-between gap-2 rounded-md p-3 active:cursor-grabbing"
             >
-              <div className="flex w-full flex-row gap-2">
+              <div className="flex min-w-0 flex-1 flex-row gap-2">
                 <div className="text-muted-foreground grid h-full place-items-center">
                   <GripVerticalIcon className="size-4" />
                 </div>
-                <div className="bg-muted-foreground/20 grid aspect-square h-full place-items-center rounded-md">
+                <div className="bg-muted-foreground/20 grid size-8 shrink-0 place-items-center rounded-md">
                   <BoxIcon />
                 </div>
-                <div className="w-full">
+                <div className="min-w-0 flex-1">
                   <div className="line-clamp-1 text-sm font-medium">{field.name}</div>
                   <div className="text-muted-foreground line-clamp-1 text-xs">{field.description}</div>
-                  {(field.subItems ?? []).map((sub, i) => (
-                    <div key={i} className="text-muted-foreground pl-2 text-xs whitespace-pre-wrap">
-                      {sub.type === "text"
-                        ? sub.text
-                        : sub.type === "priced"
-                          ? `${sub.name} — ${formatCurrencyText(form.watch("invoiceDetails.currency"), sub.amount)}`
-                          : sub.name}
-                    </div>
-                  ))}
+                  <div className="mt-2 pl-2">
+                    {(field.subItems ?? []).map((sub, i) => (
+                      <SubItemSummary key={i} sub={sub} currency={form.watch("invoiceDetails.currency")} />
+                    ))}
+                  </div>
                   <div className="text-primary text-[10px] font-medium">
                     {formatCurrencyText(form.watch("invoiceDetails.currency"), field.unitPrice)}{" "}
                     <span className="text-muted-foreground">x {field.quantity} Qty</span>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-row gap-2">
+              <div className="flex shrink-0 flex-row gap-2">
                 <div className="flex flex-col items-end justify-between gap-1">
                   <div className="flex flex-row gap-1.5">
                     <HandleItemModal type="edit" append={append} update={update} editingIndex={index} data={field}>
                       <Button
                         type="button"
+                        aria-label={`Edit item ${index + 1}`}
                         className="text-muted-foreground h-5.5 w-5.5 rounded"
                         variant="ghost"
                         size="icon"
@@ -100,6 +100,8 @@ const InvoiceItemsSection: React.FC<InvoiceItemsSectionProps> = ({ form }) => {
                       </Button>
                     </HandleItemModal>
                     <Button
+                      type="button"
+                      aria-label={`Remove item ${index + 1}`}
                       className="h-5.5 w-5.5 rounded"
                       variant="destructive"
                       size="icon"
@@ -167,7 +169,7 @@ const HandleItemModal = ({ type, append, update, editingIndex, data, children }:
       name: data?.name || "",
       description: data?.description || "",
       quantity: data?.quantity || 1,
-      unitPrice: data?.unitPrice || 1,
+      unitPrice: data?.unitPrice ?? 1,
       subItems: data?.subItems || [],
     },
   });
@@ -273,7 +275,7 @@ const SubItemsEditor = ({ form }: { form: UseFormReturn<InvoiceItem> }) => {
               </label>
               <select
                 id={`sub-item-type-${index}`}
-                className="bg-background h-9 rounded border px-2 text-sm"
+                className="bg-background h-10 w-full min-w-0 rounded border px-3 text-sm sm:w-64"
                 value={sub?.type ?? "text"}
                 onChange={(e) => {
                   const value = sub?.type === "text" ? sub.text : (sub?.name ?? "");
@@ -283,7 +285,16 @@ const SubItemsEditor = ({ form }: { form: UseFormReturn<InvoiceItem> }) => {
                       ? { type: "text", text: value }
                       : e.target.value === "name"
                         ? { type: "name", name: value }
-                        : { type: "priced", name: value, amount: sub?.type === "priced" ? sub.amount : 0 },
+                        : e.target.value === "hours"
+                          ? { type: "hours", name: value, hours: sub?.type === "hours" ? sub.hours : 0 }
+                          : e.target.value === "quantity_price"
+                            ? {
+                                type: "quantity_price",
+                                name: value,
+                                quantity: sub?.type === "quantity_price" ? sub.quantity : 1,
+                                unitPrice: sub?.type === "quantity_price" ? sub.unitPrice : 0,
+                              }
+                            : { type: "priced", name: value, amount: sub?.type === "priced" ? sub.amount : 0 },
                     { shouldDirty: true, shouldValidate: true },
                   );
                 }}
@@ -291,6 +302,8 @@ const SubItemsEditor = ({ form }: { form: UseFormReturn<InvoiceItem> }) => {
                 <option value="text">Text / description</option>
                 <option value="name">Name</option>
                 <option value="priced">Name + price</option>
+                <option value="hours">Name + Hours</option>
+                <option value="quantity_price">Name + Quantity + Unit price</option>
               </select>
               <Button
                 type="button"
@@ -331,6 +344,36 @@ const SubItemsEditor = ({ form }: { form: UseFormReturn<InvoiceItem> }) => {
               />
             ) : (
               <FormInput label="Name" name={`subItems.${index}.name`} placeholder="Name" reactform={form} />
+            )}
+            {sub?.type === "hours" && (
+              <FormInput
+                type="number"
+                min="0"
+                step="any"
+                label="Hours (descriptive only)"
+                name={`subItems.${index}.hours`}
+                reactform={form}
+              />
+            )}
+            {sub?.type === "quantity_price" && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <FormInput
+                  type="number"
+                  min="0"
+                  step="any"
+                  label="Quantity"
+                  name={`subItems.${index}.quantity`}
+                  reactform={form}
+                />
+                <FormInput
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  label="Unit price"
+                  name={`subItems.${index}.unitPrice`}
+                  reactform={form}
+                />
+              </div>
             )}
             {sub?.type === "priced" && (
               <FormInput

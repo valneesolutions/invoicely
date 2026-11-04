@@ -1,7 +1,9 @@
+import { normalizeInvoiceFields, invoiceImageWarnings } from "@/lib/invoice/normalize-invoice";
 import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
-import { normalizeInvoiceFields } from "@/lib/invoice/normalize-invoice";
 import { Button } from "@/components/ui/button";
 import { UseFormReturn } from "react-hook-form";
+import { ASSET_PUBLIC_URL } from "@/constants";
+import { toast } from "sonner";
 import * as React from "react";
 
 import {
@@ -48,7 +50,8 @@ const ImportInvoice = ({ form }: { form: UseFormReturn<ZodCreateInvoiceSchema> }
   const data = [...(trpcData.data ?? []), ...(idbData.data ?? [])];
 
   const handleRowClick = (invoice: Invoice) => {
-    form.reset(normalizeInvoiceFields(invoice.invoiceFields));
+    for (const warning of invoiceImageWarnings(invoice.invoiceFields)) toast.warning(warning);
+    form.reset(normalizeInvoiceFields(invoice.invoiceFields, ASSET_PUBLIC_URL));
     setOpen(false);
   };
 

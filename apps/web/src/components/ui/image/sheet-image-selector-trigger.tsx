@@ -1,9 +1,9 @@
+import { AssetImage as Image } from "@/components/ui/image/asset-image";
 import { ImageSparkleIcon, SignatureIcon } from "@/assets/icons";
 import { InvoiceImageType } from "@/types/common/invoice";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "../label";
-import Image from "next/image";
 import React from "react";
 
 interface SheetImageSelectorTriggerProps {

@@ -7668,6 +7668,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/papaparse@npm:^5.5.2":
+  version: 5.5.2
+  resolution: "@types/papaparse@npm:5.5.2"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/27b097b6f8f204b20ade1f2cbf4798eb38caa5fbfa3180fd0faa5e3f9aea371c1786ae180d56f3287556463eefe3100c953e316ea6ee99d7ae1d04111cfc9e50
+  languageName: node
+  linkType: hard
+
 "@types/pg@npm:^8.8.0":
   version: 8.15.4
   resolution: "@types/pg@npm:8.15.4"
@@ -14619,6 +14628,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"papaparse@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "papaparse@npm:5.7.0"
+  checksum: 10c0/aeea2122ffa7abf33206ab9465e1adcb678ca0e9b08fbd3cea53bf6dc07d5903e69f387dc4dde2498e2478130ba3db79d1fd3956bf638c00be802f0d275e006d
+  languageName: node
+  linkType: hard
+
 "parent-module@npm:^1.0.0":
   version: 1.0.1
   resolution: "parent-module@npm:1.0.1"
@@ -18000,6 +18016,7 @@ __metadata:
     "@types/lodash": "npm:^4"
     "@types/node": "npm:^20"
     "@types/number-to-words": "npm:^1"
+    "@types/papaparse": "npm:^5.5.2"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@types/react-is": "npm:^19"
@@ -18022,6 +18039,7 @@ __metadata:
     next: "npm:15.5.27"
     next-themes: "npm:^0.4.6"
     number-to-words: "npm:^1.2.4"
+    papaparse: "npm:^5.7.0"
     posthog-js: "npm:^1.239.1"
     posthog-node: "npm:^4.17.1"
     react: "npm:19.1.4"

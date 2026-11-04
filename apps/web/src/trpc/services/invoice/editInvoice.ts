@@ -1,6 +1,5 @@
+import { replaceInvoiceQuery } from "@/lib/db-queries/invoice/insertInvoice";
 import { InternalServerError, NotFoundError } from "@/lib/effect/error/trpc";
-import { insertInvoiceQuery } from "@/lib/db-queries/invoice/insertInvoice";
-import { deleteInvoiceQuery } from "@/lib/db-queries/invoice/deleteInvoice";
 import { authorizedProcedure } from "@/trpc/procedures/authorizedProcedure";
 import { createInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { getInvoiceQuery } from "@/lib/db-queries/invoice/getInvoice";
@@ -31,15 +30,8 @@ export const editInvoice = authorizedProcedure.input(EditInvoiceSchema).mutation
       return yield* new NotFoundError({ message: ERROR_MESSAGES.INVOICE_NOT_FOUND });
     }
 
-    // Delete the old invoice
     yield* Effect.tryPromise({
-      try: () => deleteInvoiceQuery(id, ctx.auth.user.id),
-      catch: (error) => new InternalServerError({ message: parseCatchError(error) }),
-    });
-
-    // Insert the new invoice
-    yield* Effect.tryPromise({
-      try: () => insertInvoiceQuery(invoice, ctx.auth.user.id, oldInvoice.id),
+      try: () => replaceInvoiceQuery(invoice, ctx.auth.user.id, oldInvoice.id),
       catch: (error) => new InternalServerError({ message: parseCatchError(error) }),
     });
 

@@ -9,6 +9,7 @@ import { resolveBodyFontFamily } from "@/lib/invoice/resolve-pdf-font";
 import { formatAmountInWords } from "@/lib/invoice/amount-in-words";
 import { formatCurrencyText } from "@/constants/currency";
 import { createTw } from "react-pdf-tailwind";
+import { PdfSubItems } from "./sub-items";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import React from "react";
@@ -193,7 +194,7 @@ const DefaultPDF: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
             {data.items.map((item, index) => (
               <View
                 key={index}
-                wrap={false}
+                wrap={true}
                 style={tw(
                   cn(
                     "flex-row p-2 text-2xs rounded",
@@ -209,16 +210,8 @@ const DefaultPDF: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
               >
                 <View style={tw("flex flex-col w-[60%]")}>
                   <Text style={tw("w-full text-sm font-semibold")}>{item.name}</Text>
-                  <Text style={tw("text-xs font-normal text-neutral-600")}>{item.description}</Text>
-                  {(item.subItems ?? []).map((sub, i) => (
-                    <Text key={i} style={tw("text-[9px] text-neutral-400 pl-2")}>
-                      {sub.type === "text"
-                        ? sub.text
-                        : sub.type === "priced"
-                          ? `${sub.name} — ${formatCurrencyText(data.invoiceDetails.currency, sub.amount)}`
-                          : sub.name}
-                    </Text>
-                  ))}
+                  <Text style={tw("text-xs leading-[14px] font-normal text-neutral-600")}>{item.description}</Text>
+                  <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={darkMode} />
                 </View>
                 <Text style={tw("w-[10%] text-sm text-center font-geistmono tracking-tighter")}>{item.quantity}</Text>
                 <Text style={tw("w-[15%] text-sm text-right font-geistmono tracking-tighter")}>

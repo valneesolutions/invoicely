@@ -36,7 +36,10 @@ const EditInvoice = ({ type, id }: EditInvoiceProps) => {
       }
 
       if (fetchedInvoice) {
-        setInvoice({ ...fetchedInvoice, invoiceFields: normalizeInvoiceFields(fetchedInvoice.invoiceFields) });
+        setInvoice({
+          ...fetchedInvoice,
+          invoiceFields: normalizeInvoiceFields(fetchedInvoice.invoiceFields, undefined, true),
+        });
         setIsLoading(false);
       } else {
         throw new Error(ERROR_MESSAGES.INVOICE_NOT_FOUND);
