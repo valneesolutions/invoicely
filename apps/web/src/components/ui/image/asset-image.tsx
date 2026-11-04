@@ -15,5 +15,13 @@ export function AssetImage(props: ImageProps) {
         Image unavailable. Re-upload it or choose another image.
       </div>
     );
-  return <Image {...props} alt={props.alt} unoptimized onError={() => setFailedSrc(String(props.src))} />;
+  return (
+    <Image
+      {...props}
+      crossOrigin={props.crossOrigin ?? "anonymous"}
+      alt={props.alt}
+      unoptimized
+      onError={() => setFailedSrc(String(props.src))}
+    />
+  );
 }

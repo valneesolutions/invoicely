@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createServer } from "node:http";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { build } from "esbuild";
@@ -8,6 +9,13 @@ import path from "node:path";
 test("PDF templates keep all sub-items across pages and separate descriptions", async () => {
   const root = process.cwd(),
     output = path.resolve(`.tmp-pdf-tests-${randomUUID()}.mjs`);
+  const logo = await fs.readFile("apps/web/public/official/logo-icon.png");
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { "Content-Type": "image/png" });
+    response.end(logo);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const imageUrl = `http://127.0.0.1:${server.address().port}/logo.png`;
   try {
     await build({
       stdin: {
@@ -43,7 +51,7 @@ test("PDF templates keep all sub-items across pages and separate descriptions", 
     const { createPdfBlob, defaults } = await import(output);
     // PDF.js only needs the DOMMatrix constructor for module initialization when extracting text in Node.
     globalThis.DOMMatrix ??= class {};
-    const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const { getDocument, OPS } = await import("pdfjs-dist/legacy/build/pdf.mjs");
     for (const [template, mode] of [
       ["default", "light"],
       ["default", "dark"],
@@ -62,6 +70,7 @@ test("PDF templates keep all sub-items across pages and separate descriptions", 
       const data = {
         ...defaults,
         metadata: null,
+        companyDetails: { ...defaults.companyDetails, logo: imageUrl },
         invoiceDetails: { ...defaults.invoiceDetails, theme: { ...defaults.invoiceDetails.theme, template, mode } },
         items: [
           { name: "Service", description: "PARENT_DESCRIPTION_MARKER", quantity: 1, unitPrice: 0, subItems: subs },
@@ -71,6 +80,8 @@ test("PDF templates keep all sub-items across pages and separate descriptions", 
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const pdf = await getDocument({ data: bytes, useSystemFonts: false }).promise;
       assert.ok(pdf.numPages > 1 && pdf.numPages < 10);
+      const operations = await (await pdf.getPage(1)).getOperatorList();
+      assert.ok(operations.fnArray.includes(OPS.paintImageXObject), `${template}/${mode}: logo must be embedded`);
       let all = "";
       let firstPage;
       for (let page = 1; page <= pdf.numPages; page++) {
@@ -93,6 +104,7 @@ test("PDF templates keep all sub-items across pages and separate descriptions", 
       await pdf.destroy();
     }
   } finally {
+    await new Promise((resolve) => server.close(resolve));
     await fs.unlink(output).catch(() => {});
   }
 });

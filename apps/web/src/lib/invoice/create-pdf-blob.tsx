@@ -3,6 +3,7 @@ import { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { createInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { normalizeInvoiceFields } from "./normalize-invoice";
 import { DefaultPDF, VercelPDF } from "@/components/pdf";
+import { preparePdfImages } from "./prepare-pdf-images";
 import { createSerialTaskQueue } from "./serial-task";
 import { pdf } from "@react-pdf/renderer";
 
@@ -18,7 +19,8 @@ export const createPdfBlob = ({ invoiceData, template }: CreatePdfBlobProps): Pr
   const data = createInvoiceSchema.parse(normalizeInvoiceFields(invoiceData));
   return renderSerially(async () => {
     const Template = getPdfTemplate(template);
-    return pdf(<Template data={data} />).toBlob();
+    const companyDetails = await preparePdfImages(data.companyDetails);
+    return pdf(<Template data={{ ...data, companyDetails }} />).toBlob();
   });
 };
 
