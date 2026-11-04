@@ -170,27 +170,29 @@ const VercelPdf: React.FC<{ data: ZodCreateInvoiceSchema }> = ({ data }) => {
                 wrap={true}
                 style={tw(
                   cn(
-                    "flex-row px-4 py-3 text-2xs border-b border-borderColor",
+                    "flex-col px-4 py-3 text-2xs border-b border-borderColor",
                     index % 2 === 0 ? "bg-[#111111]" : "bg-background",
                   ),
                 )}
               >
-                <View style={tw("flex flex-col w-[60%]")}>
-                  <Text style={tw("w-full text-xs leading-[12px] text-neutral-100")}>{item.name}</Text>
-                  <Text style={tw("text-2xs leading-[10px] mt-1 font-normal text-neutral-700")}>
-                    {item.description}
+                <View style={tw("flex-row")}>
+                  <View style={tw("flex flex-col w-[60%]")}>
+                    <Text style={tw("w-full text-xs leading-[12px] text-neutral-100")}>{item.name}</Text>
+                    <Text style={tw("text-2xs leading-[10px] mt-1 font-normal text-neutral-700")}>
+                      {item.description}
+                    </Text>
+                  </View>
+                  <Text style={tw("w-[10%] text-center font-geistmono tracking-tighter text-neutral-100")}>
+                    {item.quantity}
                   </Text>
-                  <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={true} />
+                  <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
+                    {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
+                  </Text>
+                  <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
+                    {formatCurrencyText(data.invoiceDetails.currency, getInvoiceItemTotal(item))}
+                  </Text>
                 </View>
-                <Text style={tw("w-[10%] text-center font-geistmono tracking-tighter text-neutral-100")}>
-                  {item.quantity}
-                </Text>
-                <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, item.unitPrice)}
-                </Text>
-                <Text style={tw("w-[15%] text-right font-geistmono tracking-tighter text-neutral-100")}>
-                  {formatCurrencyText(data.invoiceDetails.currency, getInvoiceItemTotal(item))}
-                </Text>
+                <PdfSubItems items={item.subItems ?? []} currency={data.invoiceDetails.currency} dark={true} />
               </View>
             ))}
           </View>

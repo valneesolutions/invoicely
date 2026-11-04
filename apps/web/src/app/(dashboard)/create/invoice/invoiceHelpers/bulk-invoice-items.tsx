@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { parseInvoiceCsv, invoiceCsvTemplate, type CsvImportResult } from "@/lib/invoice/import-csv";
+import { parseInvoiceCsv, invoiceCsvTemplate, invoiceCsvGuide, type CsvImportResult } from "@/lib/invoice/import-csv";
 import type { ZodCreateInvoiceSchema } from "@/zod-schemas/invoice/create-invoice";
 import { SubItemSummary } from "@/components/invoice/sub-item-summary";
 import { getInvoiceItemTotal } from "@/constants/pdf-helpers";
@@ -81,6 +81,20 @@ export function BulkInvoiceItems({
           }}
         />
       </div>
+      <details className="my-2 rounded border p-3 text-sm">
+        <summary className="cursor-pointer font-medium">CSV format help</summary>
+        <dl className="mt-3 space-y-3">
+          {invoiceCsvGuide.map(({ title, text }) => (
+            <div key={title}>
+              <dt className="font-medium">{title}</dt>
+              <dd className="text-muted-foreground mt-1">{text}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-muted-foreground mt-3">
+          Download the template for complete example rows for every item and sub-item type.
+        </p>
+      </details>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
